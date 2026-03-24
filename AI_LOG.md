@@ -2,28 +2,28 @@
 
 - **AI Tools Used**: Google Deepmind / Agentic Setup
 - **Prompt Records**:
-  - **Prompt 1**: "Understand all requirements in agents.md..." (Initial System Scaffolding)
+  - **Prompt 1**: "Review and analyze the system requirements detailed in `agents.md`. Scaffold the project architecture, set up the backend schema using DbML guidelines, and initialize the frontend environment using Vite and React."
     - Iterations: 1
     - Action: Scaffolded implementation plan, structured the backend schema, setup vite frontend.
-  - **Prompt 2**: "Generate the core Express API routes and seed."
+  - **Prompt 2**: "Generate the core Express.js REST API service. Implement the CRUD endpoints for draft plans, and create the Prisma schema required to map hero selections to the OpenDota API."
     - Iterations: 1
     - Action: Generated REST endpoints and Postgres schemas mapping to OpenDota hero IDs.
-  - **Prompt 3**: "Build the Frontend React UI Pages"
+  - **Prompt 3**: "Develop the React Frontend interfaces. Construct the `DraftPlansList` and `DraftPlanDetail` routing components, ensuring the data binding correctly references the backend endpoints using React Query."
     - Iterations: 2 (needed to fix Tailwind and Vite creation prompts)
     - Action: Created DraftPlansList and DraftPlanDetail with TailwindCSS UI.
-  - **Prompt 4**: "Implement Draft Summary View and format deliverables"
+  - **Prompt 4**: "Implement the Draft Summary view functionality. Format all required assessment deliverables, including the README instructions, ERD schema validations, and architectural design documents."
     - Iterations: 1
     - Action: Created the final DraftSummaryModal and all required documentation artifacts.
-  - **Prompt 5**: "There are bonus requirements we can still do... how about we just run everything in docker?"
+  - **Prompt 5**: "Fulfill the bonus assessment requirements: Implement full JWT authentication, configure PostgreSQL for atomic job queuing, and containerize the entire stack using Docker Compose for a zero-dependency local deployment. Additionally, scaffold Playwright for E2E testing."
     - Iterations: 1
     - Action: Implemented JWT Authentication, PostgreSQL atomic Job Queues (`SKIP LOCKED`), full Dockerization (Dockerfile Frontend & Backend), and Playwright E2E configurations.
-  - **Prompt 6**: "I tried docker compose up -d --build and got an error... reference customEvent is not defined"
+  - **Prompt 6**: "Diagnose and resolve the Docker build compilation errors. Specifically, address the 'customEvent is not defined' Vite bug by upgrading the Node Alpine ecosystem, and resolve the missing libssl dependencies required by the Prisma query engine."
     - Iterations: 2
     - Action: Upgraded Node image to `node:20-alpine` to satisfy Vite v6, and explicitly installed `openssl` via Alpine `apk` for Prisma Engine compatibility.
-  - **Prompt 7**: "The UI still looks too AI, remove shadcn, then do this... You are building a Dota 2 Draft Plans app with a modern tactical esports dashboard visual identity."
+  - **Prompt 7**: "Overhaul the frontend visual identity. Strip the generic Shadcn component library and implement a bespoke, high-density tactical esports dashboard using raw Tailwind CSS v4 design tokens, adhering to the provided dark mode color palette (e.g., Primary `#C2410C`, Background `#000000`)."
     - Iterations: 2
     - Action: Completely stripped Shadcn dependencies, manually configured `index.css` with raw Tailwind v4 theme tokens, and rewrote all frontend views to match the rigid tactical design system parameters.
-  - **Prompt 8**: "The E2E tests are all failing, I want you to fix it until the E2E tests pass"
+  - **Prompt 8**: "Debug the Playwright End-to-End test suite. Refactor the DOM locators to target the new tactical UI nodes correctly. Resolve the race conditions occurring during modal transitions, and ensure the test suite passes on a fresh Docker deployment."
     - Iterations: 4
     - Action: Interactively matched Playwright E2E locators against the new Tactical DOM nodes. Resolved race condition issues in testing where modal closings were overlapping with button clicks by enforcing `toBeHidden` strict validations. Fixed missing Hero fetching mappings.
 

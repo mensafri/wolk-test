@@ -19,8 +19,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-tactical-bg text-tactical-text-primary font-sans flex flex-col">
-      <header className="h-[64px] border-b border-tactical-border bg-tactical-surface flex items-center px-6 sticky top-0 z-40">
+    <div className="min-h-screen text-tactical-text-primary font-sans flex flex-col relative overflow-hidden">
+      <header className="h-[64px] border-b border-tactical-border/50 bg-tactical-surface/40 backdrop-blur-md flex items-center px-6 sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-sm bg-tactical-primary flex items-center justify-center font-bold text-white shadow-shadow-glow">
             D2

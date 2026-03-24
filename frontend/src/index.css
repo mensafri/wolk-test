@@ -4,16 +4,16 @@
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, monospace;
   
-  --color-tactical-bg: #0B1020;
-  --color-tactical-surface: #121A2B;
-  --color-tactical-surface-dark: #080D1A;
+  --color-tactical-bg: #000000;
+  --color-tactical-surface: #0f0f0f;
+  --color-tactical-surface-dark: #050505;
   --color-tactical-primary: #C2410C;
   --color-tactical-primary-hover: #D84D14;
-  --color-tactical-secondary: #2563EB;
-  --color-tactical-secondary-hover: #1D4ED8;
+  --color-tactical-secondary: #facc15; /* Changed to a subtle yellow/gold accent instead of blue */
+  --color-tactical-secondary-hover: #eab308;
   --color-tactical-text-primary: #F8FAFC;
-  --color-tactical-text-secondary: #94A3B8;
-  --color-tactical-border: #243041;
+  --color-tactical-text-secondary: #737373; /* Neutral gray */
+  --color-tactical-border: #1e1e1e;
   
   --color-tactical-success: #16A34A;
   --color-tactical-warning: #D97706;
@@ -42,6 +42,8 @@
 @layer base {
   body {
     background-color: var(--color-tactical-bg);
+    background-image: radial-gradient(circle at center top, #111111 0%, #000000 70%);
+    background-attachment: fixed;
     color: var(--color-tactical-text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -75,30 +77,57 @@
   }
   
   .btn:disabled {
-    @apply opacity-50 cursor-not-allowed shadow-none transform-none;
+    @apply opacity-50 cursor-not-allowed transform-none;
+    box-shadow: none !important;
   }
 
   .btn-primary {
-    @apply bg-tactical-primary text-white shadow-subtle hover:bg-tactical-primary-hover hover:shadow-glow;
+    background: linear-gradient(135deg, #E05A1F, #C2410C);
+    border: 1px solid #f98b5e;
+    @apply text-white shadow-subtle;
+  }
+  
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #F17544, #D84D14);
+    box-shadow: 0 0 16px rgba(194, 65, 12, 0.6);
   }
 
   .btn-secondary {
-    @apply bg-transparent border border-tactical-border text-tactical-text-primary hover:bg-tactical-surface-dark hover:border-tactical-text-secondary;
+    @apply bg-transparent border border-tactical-border text-tactical-text-primary shadow-subtle;
+  }
+  
+  .btn-secondary:hover {
+    @apply bg-tactical-surface-dark border-tactical-text-secondary;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.05);
   }
 
   .btn-danger {
-    @apply bg-tactical-error text-white shadow-subtle hover:bg-red-700 hover:shadow-medium;
+    background: linear-gradient(135deg, #e53e3e, #DC2626);
+    border: 1px solid #fc8181;
+    @apply text-white shadow-subtle;
+  }
+  
+  .btn-danger:hover {
+    background: linear-gradient(135deg, #f56565, #e53e3e);
+    box-shadow: 0 0 16px rgba(220, 38, 38, 0.6);
   }
 
   .input-field {
-    @apply h-[44px] px-[14px] bg-tactical-surface-dark border border-tactical-border rounded-sm text-tactical-text-primary placeholder:text-tactical-text-secondary transition-all outline-none w-full;
+    @apply h-[40px] px-[14px] bg-tactical-surface/50 border border-tactical-border rounded-sm text-tactical-text-primary placeholder:text-tactical-text-secondary transition-all outline-none w-full;
   }
   
   .input-field:focus {
-    @apply border-tactical-primary shadow-glow;
+    @apply border-tactical-primary;
+    box-shadow: 0 0 0 1px #C2410C, 0 0 12px rgba(194, 65, 12, 0.2);
   }
 
   .card {
-    @apply bg-tactical-surface border border-tactical-border rounded-md shadow-subtle flex flex-col;
+    @apply bg-tactical-surface/80 border border-tactical-border rounded-md shadow-subtle flex flex-col transition-all duration-300;
+  }
+  
+  .card:hover {
+    @apply border-tactical-text-secondary bg-tactical-surface;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 1), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   }
 }
