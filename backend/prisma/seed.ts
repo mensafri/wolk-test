@@ -1,13 +1,26 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Starting seed...');
 
+  const hashedPassword = await bcrypt.hash('password123', 10);
+  
+  const testUser = await prisma.user.upsert({
+    where: { username: 'testuser' },
+    update: {},
+    create: {
+      username: 'testuser',
+      password: hashedPassword,
+    }
+  });
+
   // Sample Draft Plan
   const plan1 = await prisma.draftPlan.create({
     data: {
+      userId: testUser.id,
       name: 'TI 13 Grand Finals Game 1',
       description: 'Test draft plan for the application',
       heroes: {
@@ -29,6 +42,7 @@ async function main() {
     }
   });
 
+  console.log('Seed completed. Created user:', testUser.username);
   console.log('Seed completed. Created draft plan:', plan1.name);
 }
 

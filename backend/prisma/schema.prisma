@@ -7,13 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  
+  draftPlans DraftPlan[]
+}
+
 model DraftPlan {
   id          Int      @id @default(autoincrement())
+  userId      Int
   name        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  synergyNote String?
 
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   heroes       ListHero[]
   enemyThreats EnemyThreat[]
   itemTimings  ItemTiming[]
@@ -77,3 +89,14 @@ model HeroCache {
   imageUrl      String?
   updatedAt     DateTime @updatedAt
 }
+
+model JobQueue {
+  id          Int      @id @default(autoincrement())
+  status      String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  type        String   // "ANALYZE_SYNERGY"
+  payload     String   // JSON stringified payload
+  result      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

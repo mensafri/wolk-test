@@ -5,11 +5,22 @@ const api = axios.create({
   baseURL: '/api'
 });
 
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const getDraftPlans = () => api.get<DraftPlan[]>('/draft-plans').then(res => res.data);
 export const createDraftPlan = (data: { name: string, description?: string }) => api.post<DraftPlan>('/draft-plans', data).then(res => res.data);
 export const getDraftPlan = (id: number) => api.get<DraftPlanDetailData>(`/draft-plans/${id}`).then(res => res.data);
 
 export const getHeroes = () => api.get<HeroCache[]>('/heroes').then(res => res.data);
+
+export const login = (data: any) => api.post('/auth/login', data).then(res => res.data);
+export const register = (data: any) => api.post('/auth/register', data).then(res => res.data);
 
 export const addListHero = (planId: number, data: any) => api.post(`/draft-plans/${planId}/heroes`, data).then(res => res.data);
 export const updateListHero = (heroId: number, data: any) => api.put(`/draft-plans/heroes/${heroId}`, data).then(res => res.data);

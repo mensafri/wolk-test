@@ -14,6 +14,9 @@
   - **Prompt 4**: "Implement Draft Summary View and format deliverables"
     - Iterations: 1
     - Action: Created the final DraftSummaryModal and all required documentation artifacts.
+  - **Prompt 5**: "di bonus ada yang bisa dikerjakan lagi yaitu ... lalu gimana kalau semuanya dijalankan di docker sekalian?"
+    - Iterations: 1
+    - Action: Implemented JWT Authentication, PostgreSQL atomic Job Queues (`SKIP LOCKED`), full Dockerization (Dockerfile Frontend & Backend), and Playwright E2E configurations.
 
-- **Notes**: AI was used primarily for scaffolding React components, generating Express boilerplate, automatically translating `agents.md` requirements into a Prisma database schema, and drafting documentation blocks.
+- **Notes**: AI was used primarily for scaffolding React components, generating Express boilerplate, automatically translating `agents.md` requirements into a Prisma database schema, and drafting documentation blocks. AI successfully structured the Docker multi-container environment efficiently.
 - **Custom Files Provided**: Evaluated strictly from `agents.md`.
