@@ -92,7 +92,7 @@ app.post('/api/draft-plans', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/draft-plans/:id', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.id as string);
   const plan = await prisma.draftPlan.findUnique({
     where: { id },
     include: {
@@ -111,7 +111,7 @@ app.get('/api/draft-plans/:id', authenticateToken, async (req, res) => {
 // Note: In real production, we'd verify DraftPlan ownership before mutating its children.
 
 app.post('/api/draft-plans/:id/heroes', authenticateToken, async (req, res) => {
-  const draftPlanId = parseInt(req.params.id);
+  const draftPlanId = parseInt(req.params.id as string);
   const { heroId, type, role, priority, note } = req.body;
   const listHero = await prisma.listHero.create({
     data: { draftPlanId, heroId: parseInt(heroId), type, role, priority, note }
@@ -120,7 +120,7 @@ app.post('/api/draft-plans/:id/heroes', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.heroId);
+  const id = parseInt(req.params.heroId as string);
   const { role, priority, note } = req.body;
   const listHero = await prisma.listHero.update({
     where: { id },
@@ -130,13 +130,13 @@ app.put('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) =
 });
 
 app.delete('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.heroId);
+  const id = parseInt(req.params.heroId as string);
   await prisma.listHero.delete({ where: { id } });
   res.json({ success: true });
 });
 
 app.post('/api/draft-plans/:id/threats', authenticateToken, async (req, res) => {
-  const draftPlanId = parseInt(req.params.id);
+  const draftPlanId = parseInt(req.params.id as string);
   const { heroId, note } = req.body;
   const threat = await prisma.enemyThreat.create({
     data: { draftPlanId, heroId: parseInt(heroId), note }
@@ -145,7 +145,7 @@ app.post('/api/draft-plans/:id/threats', authenticateToken, async (req, res) => 
 });
 
 app.put('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.threatId);
+  const id = parseInt(req.params.threatId as string);
   const { note } = req.body;
   const threat = await prisma.enemyThreat.update({
     where: { id },
@@ -155,13 +155,13 @@ app.put('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res
 });
 
 app.delete('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.threatId);
+  const id = parseInt(req.params.threatId as string);
   await prisma.enemyThreat.delete({ where: { id } });
   res.json({ success: true });
 });
 
 app.post('/api/draft-plans/:id/item-timings', authenticateToken, async (req, res) => {
-  const draftPlanId = parseInt(req.params.id);
+  const draftPlanId = parseInt(req.params.id as string);
   const { timing, explanation } = req.body;
   const itemTiming = await prisma.itemTiming.create({
     data: { draftPlanId, timing, explanation }
@@ -170,7 +170,7 @@ app.post('/api/draft-plans/:id/item-timings', authenticateToken, async (req, res
 });
 
 app.delete('/api/draft-plans/item-timings/:timingId', authenticateToken, async (req, res) => {
-  const id = parseInt(req.params.timingId);
+  const id = parseInt(req.params.timingId as string);
   await prisma.itemTiming.delete({ where: { id } });
   res.json({ success: true });
 });
