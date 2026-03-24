@@ -4,79 +4,83 @@ import type { HeroCache } from '../types';
 import { useState, useMemo } from 'react';
 
 interface HeroBrowserProps {
+  onSelectHero: (hero: HeroCache) => void;
   onClose: () => void;
-  onSelect: (hero: HeroCache) => void;
-  excludingHeroIds?: number[];
+  hideHeroes?: number[];
+  title?: string;
 }
 
-export default function HeroBrowser({ onClose, onSelect, excludingHeroIds = [] }: HeroBrowserProps) {
-  const { data: heroes, isLoading } = useQuery({ queryKey: ['heroes'], queryFn: getHeroes });
+export default function HeroBrowser({ onSelectHero, onClose, hideHeroes = [], title="Hero Browser" }: HeroBrowserProps) {
   const [search, setSearch] = useState('');
-  const [attrFilter, setAttrFilter] = useState('all');
+  
+  const { data: heroes, isLoading } = useQuery({
+    queryKey: ['heroes'],
+    queryFn: getHeroes,
+    staleTime: 24 * 60 * 60 * 1000,
+  });
 
   const filteredHeroes = useMemo(() => {
     if (!heroes) return [];
-    return heroes.filter(h => {
-      if (excludingHeroIds.includes(h.id)) return false;
-      if (search && !h.localizedName.toLowerCase().includes(search.toLowerCase())) return false;
-      if (attrFilter !== 'all' && h.primaryAttr !== attrFilter) return false;
-      return true;
-    }).sort((a, b) => a.localizedName.localeCompare(b.localizedName));
-  }, [heroes, search, attrFilter, excludingHeroIds]);
+    return heroes.filter(h => 
+      !hideHeroes.includes(h.id) && 
+      (h.localizedName.toLowerCase().includes(search.toLowerCase()) || 
+       h.roles.some(r => r.toLowerCase().includes(search.toLowerCase())))
+    );
+  }, [heroes, search, hideHeroes]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
-          <h2 className="text-xl font-bold text-white">Select a Hero</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
-            ✕
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+      <div className="bg-dota-panel border border-dota-gold/30 rounded-sm shadow-dota w-full max-w-5xl h-[85vh] flex flex-col relative">
+        <div className="p-4 border-b border-dota-border bg-dota-dark flex justify-between items-center">
+          <h2 className="text-xl font-black tracking-widest uppercase text-dota-gold">{title}</h2>
+          <button onClick={onClose} className="dota-btn border-none hover:text-dota-dire">Close ✕</button>
         </div>
         
-        <div className="p-4 border-b border-slate-800 flex gap-4 bg-slate-800/30">
+        <div className="p-4 bg-dota-panel border-b border-dota-border">
           <input 
-            type="text" 
-            placeholder="Search heroes..." 
+            type="text"
+            placeholder="Search heroes by name or role..."
+            className="dota-input w-full max-w-md"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+            autoFocus
           />
-          <select 
-            value={attrFilter} 
-            onChange={e => setAttrFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
-          >
-            <option value="all">All Attributes</option>
-            <option value="str">Strength</option>
-            <option value="agi">Agility</option>
-            <option value="int">Intelligence</option>
-            <option value="all">Universal</option> 
-          </select>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {isLoading ? (
-            <div className="text-center py-12 text-slate-400">Loading heroes...</div>
+            <div className="text-center py-20 text-dota-gold uppercase tracking-widest animate-pulse">Loading Heroes Archives...</div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {filteredHeroes.map(hero => (
-                <button
-                  key={hero.id}
-                  onClick={() => onSelect(hero)}
-                  className="flex flex-col items-center bg-slate-800 border border-slate-700 hover:border-emerald-500 p-3 rounded-lg hover:bg-slate-700 transition-all group"
-                >
-                  <div className="w-16 h-16 bg-slate-900 rounded-full mb-3 flex items-center justify-center border border-slate-700 shadow-inner overflow-hidden">
-                    <img src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${hero.name.replace('npc_dota_hero_', '')}.png`} alt={hero.localizedName} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform" />
+                <div key={hero.id} className="bg-dota-dark border border-dota-border hover:border-dota-gold/50 rounded-sm overflow-hidden group transition-colors flex flex-col shadow-inner">
+                  {/* Since image URLs from OpenDota are relative sometimes, we use initials if no image is rendered to be safe, but we'll try to show the name prominently */}
+                  <div className="h-24 bg-gradient-to-b from-[#2a3038] to-[#14161a] border-b border-dota-border flex items-center justify-center relative overflow-hidden">
+                     {hero.primaryAttr === 'str' && <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-dota-dire shadow-glow"></div>}
+                     {hero.primaryAttr === 'agi' && <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-dota-radiant shadow-glow"></div>}
+                     {hero.primaryAttr === 'int' && <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-cyan-500 shadow-glow"></div>}
+                     {hero.primaryAttr === 'all' && <div className="absolute top-1 left-1 w-2 h-2 rounded-full bg-dota-gold shadow-glow"></div>}
+                     <span className="text-4xl font-black text-white/10 select-none">{hero.localizedName.charAt(0)}</span>
                   </div>
-                  <span className="text-sm font-medium text-slate-200 text-center leading-tight">
-                    {hero.localizedName}
-                  </span>
-                </button>
+                  <div className="p-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-white truncate group-hover:text-dota-gold transition-colors">{hero.localizedName}</h3>
+                      <p className="text-[10px] text-dota-muted uppercase tracking-wider mt-1 truncate">
+                        {hero.roles.slice(0, 2).join(', ')}
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => onSelectHero(hero)}
+                      className="mt-3 w-full border border-dota-border bg-dota-panel text-xs uppercase tracking-wider font-bold py-1.5 hover:bg-dota-gold hover:text-dota-dark hover:border-dota-gold transition-colors"
+                    >
+                      Select
+                    </button>
+                  </div>
+                </div>
               ))}
               {filteredHeroes.length === 0 && (
-                <div className="col-span-full text-center py-12 text-slate-500">
-                  No heroes found matching criteria.
+                <div className="col-span-full py-10 text-center text-dota-muted uppercase tracking-widest text-sm">
+                  No heroes found matching your battle criteria.
                 </div>
               )}
             </div>

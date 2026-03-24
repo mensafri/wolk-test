@@ -25,52 +25,79 @@ export default function Login({ setToken }: { setToken: (t: string) => void }) {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 bg-slate-800 p-8 rounded-xl border border-slate-700 shadow-xl">
-      <h2 className="text-2xl font-bold text-center text-white mb-6">
-        {isLogin ? 'Login to Draft Plans' : 'Register New Account'}
-      </h2>
-      
-      {error && <div className="bg-rose-500/20 text-rose-400 p-3 rounded mb-4 text-center text-sm border border-rose-500/50">{error}</div>}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">Username</label>
-          <input
-            type="text"
-            required
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-400 mb-1">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-lg transition-colors shadow-lg shadow-emerald-500/20 mt-4"
-        >
-          {isLogin ? 'Sign In' : 'Create Account'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center text-sm text-slate-400">
-        {isLogin ? "Don't have an account? " : "Already have an account? "}
-        <button onClick={() => setIsLogin(!isLogin)} className="text-emerald-400 hover:text-emerald-300 font-medium">
-          {isLogin ? 'Register' : 'Login'}
-        </button>
+    <div className="max-w-md mx-auto mt-24">
+      {/* Decorative Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-black uppercase tracking-widest text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">
+          Captain's Mode
+        </h1>
+        <p className="text-dota-gold uppercase tracking-[0.15em] text-sm mt-2 opacity-80">
+          Authentication Required
+        </p>
       </div>
 
-      <div className="mt-6 p-4 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-500 text-center">
-        Test Account:<br />
-        testuser / password123
+      {/* Main Panel */}
+      <div className="dota-panel p-8">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-dota-gold to-transparent opacity-50"></div>
+        
+        <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider border-b border-dota-border pb-3">
+          {isLogin ? 'Enter The Battle' : 'Enlist Now'}
+        </h2>
+        
+        {error && (
+          <div className="bg-dota-dire/20 border-l-4 border-dota-dire text-white p-3 mb-6 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-dota-muted uppercase mb-1.5 tracking-wider">Username</label>
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              className="dota-input"
+              placeholder="e.g., Puppey"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-dota-muted uppercase mb-1.5 tracking-wider">Password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="dota-input"
+              placeholder="••••••••"
+            />
+          </div>
+          <button
+            type="submit"
+            className="dota-btn dota-btn-primary w-full mt-6 py-3 text-sm"
+          >
+            {isLogin ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+
+        <div className="mt-8 text-center border-t border-dota-border pt-6">
+          <p className="text-dota-muted text-sm">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              onClick={() => setIsLogin(!isLogin)} 
+              className="text-dota-gold hover:text-white transition-colors border-b border-dota-gold/30 hover:border-white uppercase tracking-wider text-xs ml-2"
+            >
+              {isLogin ? 'Register' : 'Login'}
+            </button>
+          </p>
+        </div>
+
+        {/* Demo Account Box */}
+        <div className="mt-8 bg-dota-dark/80 border border-dota-border/50 p-4 text-center">
+          <p className="text-xs uppercase tracking-widest text-dota-muted mb-1">Demo Credentials</p>
+          <p className="text-sm font-mono text-dota-gold">testuser / password123</p>
+        </div>
       </div>
     </div>
   );

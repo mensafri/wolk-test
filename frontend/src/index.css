@@ -4,6 +4,33 @@
 
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 font-sans;
+    @apply bg-dota-bg text-dota-text font-sans antialiased;
+    /* Optional Dota background pattern or vignette */
+    background-image: radial-gradient(circle at center, #1b2229 0%, #0a0d10 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .dota-btn {
+    @apply uppercase tracking-wider font-bold text-xs px-4 py-2 border rounded-sm transition-all duration-200 shadow-dota;
+  }
+  .dota-btn-primary {
+    @apply border-dota-gold text-dota-dark bg-gradient-to-b from-dota-goldhover to-dota-gold hover:brightness-110 shadow-glow;
+  }
+  .dota-btn-secondary {
+    @apply border-dota-border text-dota-text bg-dota-panel hover:bg-dota-border hover:text-white;
+  }
+  .dota-btn-dire {
+    @apply border-dota-dire/50 text-white bg-gradient-to-b from-dota-dire to-[#8a1c1c] hover:brightness-110;
+  }
+  .dota-btn-radiant {
+    @apply border-dota-radiant/50 text-white bg-gradient-to-b from-[#76b553] to-dota-radiant hover:brightness-110;
+  }
+  .dota-input {
+    @apply w-full bg-dota-dark border border-dota-border rounded-sm px-4 py-2 text-white focus:outline-none focus:border-dota-gold focus:ring-1 focus:ring-dota-gold transition-colors shadow-inner;
+  }
+  .dota-panel {
+    @apply bg-gradient-to-b from-dota-panel to-dota-bg border border-dota-border rounded-sm shadow-dota relative overflow-hidden;
   }
 }

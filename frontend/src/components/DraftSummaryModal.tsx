@@ -2,110 +2,123 @@ import type { DraftPlanDetailData, HeroCache } from '../types';
 
 interface DraftSummaryModalProps {
   plan: DraftPlanDetailData;
-  heroes?: HeroCache[];
+  heroesCache: HeroCache[];
   onClose: () => void;
 }
 
-export default function DraftSummaryModal({ plan, heroes, onClose }: DraftSummaryModalProps) {
-  const getHeroDetails = (heroId: number) => heroes?.find(h => h.id === heroId);
-
-  const bans = plan.heroes.filter(h => h.type === 'BAN');
-  const prefers = plan.heroes.filter(h => h.type === 'PREFERRED');
+export default function DraftSummaryModal({ plan, heroesCache, onClose }: DraftSummaryModalProps) {
+  const getHeroDetail = (id: number) => heroesCache.find(h => h.id === id);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col p-4 sm:p-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-3xl font-black text-white">{plan.name} - Summary</h2>
-          <p className="text-slate-400 mt-1">{plan.description}</p>
-        </div>
-        <button onClick={onClose} className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-2 rounded-lg font-bold transition-colors">
-          Close Summary
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 content-start">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+      <div className="bg-dota-panel border border-dota-gold/50 rounded-sm shadow-dota w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
         
-        {/* Bans Summary */}
-        <section className="bg-rose-950/30 border border-rose-900/50 rounded-xl p-5">
-          <h3 className="text-xl font-bold text-rose-400 mb-4 border-b border-rose-900/50 pb-2">Bans</h3>
-          {bans.length === 0 ? <p className="text-rose-200/50 text-sm">No bans.</p> : (
-            <div className="space-y-3">
-              {bans.map(ban => {
-                const h = getHeroDetails(ban.heroId);
-                return (
-                  <div key={ban.id} className="flex gap-3 items-center">
-                    <img src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${h?.name.replace('npc_dota_hero_', '')}.png`} alt="" className="w-10 h-10 rounded shadow-sm object-cover grayscale brightness-75" />
-                    <div>
-                      <div className="font-bold text-rose-200 whitespace-nowrap">{h?.localizedName}</div>
-                      {ban.note && <div className="text-xs text-rose-300/80 leading-tight">{ban.note}</div>}
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Header Ribbon */}
+        <div className="bg-gradient-to-r from-dota-dark via-dota-panel to-dota-dark p-6 border-b border-dota-border sticky top-0 z-10 flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-black uppercase tracking-widest text-dota-gold">Draft Summary: {plan.name}</h2>
+            {plan.description && <p className="text-dota-text text-sm mt-1">{plan.description}</p>}
+          </div>
+          <button onClick={onClose} className="dota-btn dota-btn-secondary border-none hover:bg-dota-dire">
+            Close ✕
+          </button>
+        </div>
+
+        <div className="p-6 space-y-8">
+          {/* Automated Synergy Note */}
+          {plan.synergyNote && (
+            <div className="bg-gradient-to-r from-dota-dark to-transparent border-l-4 border-dota-radiant p-4">
+              <h4 className="text-xs font-bold text-dota-radiant uppercase tracking-widest mb-1">Analyzer AI Synergy</h4>
+              <p className="text-sm font-mono text-dota-text">{plan.synergyNote}</p>
             </div>
           )}
-        </section>
 
-        {/* Preferred Summary */}
-        <section className="bg-emerald-950/30 border border-emerald-900/50 rounded-xl p-5 lg:col-span-2">
-          <h3 className="text-xl font-bold text-emerald-400 mb-4 border-b border-emerald-900/50 pb-2">Preferred Picks</h3>
-          {prefers.length === 0 ? <p className="text-emerald-200/50 text-sm">No picks.</p> : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {prefers.map(pick => {
-                const h = getHeroDetails(pick.heroId);
-                return (
-                  <div key={pick.id} className="flex gap-3 bg-emerald-900/10 p-2 rounded-lg border border-emerald-900/30">
-                    <img src={`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${h?.name.replace('npc_dota_hero_', '')}.png`} alt="" className="w-12 h-12 rounded shadow-sm object-cover" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="font-bold text-emerald-200 truncate">{h?.localizedName}</div>
-                        {pick.priority && <span className={`text-[10px] px-1.5 py-0.5 rounded font-black tracking-wider ${pick.priority === 'HIGH' ? 'bg-amber-500 text-amber-950' : pick.priority === 'MEDIUM' ? 'bg-blue-500 text-blue-950' : 'bg-slate-600 text-slate-200'}`}>{pick.priority}</span>}
-                      </div>
-                      {pick.role && <div className="text-[11px] font-semibold text-emerald-400/80 uppercase tracking-widest mt-0.5">{pick.role}</div>}
-                      {pick.note && <div className="text-xs text-emerald-300/70 truncate mt-1">{pick.note}</div>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Threats & Timings Summary */}
-        <div className="space-y-6">
-          <section className="bg-orange-950/30 border border-orange-900/50 rounded-xl p-5">
-            <h3 className="text-xl font-bold text-orange-400 mb-4 border-b border-orange-900/50 pb-2">Enemy Threats</h3>
-            {plan.enemyThreats.length === 0 ? <p className="text-orange-200/50 text-sm">No threats.</p> : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Bans */}
+            <div>
+              <h3 className="text-lg font-bold uppercase tracking-widest text-dota-dire border-b border-dota-dire/30 mb-4 pb-2">Banned Heroes ({plan.heroes.filter(h => h.type === 'BAN').length})</h3>
               <ul className="space-y-3">
-                {plan.enemyThreats.map(threat => {
-                  const h = getHeroDetails(threat.heroId);
+                {plan.heroes.filter(h => h.type === 'BAN').map(h => {
+                  const heroDetail = getHeroDetail(h.heroId);
                   return (
-                    <li key={threat.id} className="flex items-start gap-2 text-sm">
-                      <span className="font-bold text-orange-300 whitespace-nowrap">{h?.localizedName}:</span>
-                      <span className="text-orange-200/70">{threat.note}</span>
+                    <li key={h.id} className="bg-dota-dark p-3 border border-dota-border rounded-sm flex items-start gap-3">
+                       <div className="w-10 h-10 bg-dota-panel border border-dota-dire flex items-center justify-center font-bold text-dota-dire shrink-0">
+                         {heroDetail?.localizedName?.charAt(0) || '?'}
+                       </div>
+                       <div>
+                         <div className="font-bold text-white">{heroDetail?.localizedName || 'Unknown Hero'}</div>
+                         {h.note && <div className="text-xs text-dota-muted italic mt-1">"{h.note}"</div>}
+                       </div>
                     </li>
-                  );
+                  )
                 })}
+                {plan.heroes.filter(h => h.type === 'BAN').length === 0 && <span className="text-sm text-dota-muted italic">No bans registered.</span>}
               </ul>
-            )}
-          </section>
+            </div>
 
-          <section className="bg-blue-950/30 border border-blue-900/50 rounded-xl p-5">
-            <h3 className="text-xl font-bold text-blue-400 mb-4 border-b border-blue-900/50 pb-2">Item Timings</h3>
-            {plan.itemTimings.length === 0 ? <p className="text-blue-200/50 text-sm">No timings.</p> : (
-              <ul className="space-y-2">
-                {plan.itemTimings.map(t => (
-                  <li key={t.id} className="bg-blue-900/20 p-2 rounded border border-blue-900/40">
-                    <div className="font-mono text-blue-300 font-bold text-sm">{t.timing}</div>
-                    <div className="text-xs text-blue-200/70 mt-1">{t.explanation}</div>
+            {/* Preferred Picks */}
+            <div>
+              <h3 className="text-lg font-bold uppercase tracking-widest text-dota-radiant border-b border-dota-radiant/30 mb-4 pb-2">Preferred Picks ({plan.heroes.filter(h => h.type === 'PREFERRED').length})</h3>
+              <ul className="space-y-3">
+                {plan.heroes.filter(h => h.type === 'PREFERRED').map(h => {
+                  const heroDetail = getHeroDetail(h.heroId);
+                  return (
+                    <li key={h.id} className="bg-dota-dark p-3 border border-dota-border rounded-sm flex items-start gap-3">
+                       <div className="w-10 h-10 bg-dota-panel border border-dota-radiant flex items-center justify-center font-bold text-dota-radiant shrink-0">
+                         {heroDetail?.localizedName?.charAt(0) || '?'}
+                       </div>
+                       <div className="flex-1">
+                         <div className="flex justify-between">
+                            <span className="font-bold text-white">{heroDetail?.localizedName || 'Unknown Hero'}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-sm uppercase tracking-wider ${h.priority === 'HIGH' ? 'bg-dota-radiant/20 text-dota-radiant' : h.priority === 'MEDIUM' ? 'bg-dota-gold/20 text-dota-gold' : 'bg-slate-700 text-slate-300'}`}>
+                              {h.priority}
+                            </span>
+                         </div>
+                         <div className="text-xs text-dota-gold font-bold mt-1">Role: <span className="text-dota-text font-normal">{h.role || 'Any'}</span></div>
+                         {h.note && <div className="text-xs text-dota-muted italic mt-1">"{h.note}"</div>}
+                       </div>
+                    </li>
+                  )
+                })}
+                {plan.heroes.filter(h => h.type === 'PREFERRED').length === 0 && <span className="text-sm text-dota-muted italic">No picks registered.</span>}
+              </ul>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-dota-border pt-8">
+            {/* Enemy Threats */}
+            <div>
+              <h3 className="text-lg font-bold uppercase tracking-widest text-orange-400 border-b border-orange-400/30 mb-4 pb-2">Enemy Threats</h3>
+              <ul className="space-y-3">
+                {plan.enemyThreats.map(t => {
+                  const heroDetail = getHeroDetail(t.heroId);
+                  return (
+                    <li key={t.id} className="bg-dota-dark p-3 border border-dota-border rounded-sm">
+                      <div className="font-bold text-orange-300 mb-1">!! {heroDetail?.localizedName || 'Unknown Hero'}</div>
+                      {t.note && <div className="text-xs text-dota-muted">{t.note}</div>}
+                    </li>
+                  )
+                })}
+                {plan.enemyThreats.length === 0 && <span className="text-sm text-dota-muted italic">No threats analyzed.</span>}
+              </ul>
+            </div>
+
+            {/* Item Timings */}
+            <div>
+              <h3 className="text-lg font-bold uppercase tracking-widest text-cyan-400 border-b border-cyan-400/30 mb-4 pb-2">Key Item Timings</h3>
+              <ul className="space-y-3">
+                {plan.itemTimings.map(it => (
+                  <li key={it.id} className="bg-dota-dark p-3 border border-dota-border border-l-2 border-l-cyan-500 rounded-sm">
+                    <div className="font-bold font-mono text-cyan-300 text-sm mb-1">⏱ {it.timing}</div>
+                    <div className="text-xs text-dota-text">{it.explanation}</div>
                   </li>
                 ))}
+                {plan.itemTimings.length === 0 && <span className="text-sm text-dota-muted italic">No item timings specified.</span>}
               </ul>
-            )}
-          </section>
-        </div>
+            </div>
+          </div>
 
+        </div>
       </div>
     </div>
   );

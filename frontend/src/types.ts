@@ -45,4 +45,5 @@ export interface DraftPlanDetailData extends DraftPlan {
   heroes: ListHero[];
   enemyThreats: EnemyThreat[];
   itemTimings: ItemTiming[];
+  synergyNote?: string;
 }
