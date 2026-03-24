@@ -24,4 +24,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Start script that also runs migrations
-CMD ["sh", "-c", "npx prisma migrate deploy && tsx prisma/seed.ts && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && node dist/index.js"]

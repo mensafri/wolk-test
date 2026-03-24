@@ -13,7 +13,13 @@ The system follows a classic decoupled 3-tier architecture:
    - "Enemy Threats" List
    - "Item Timings" Form and List
    - A modal `<HeroBrowser>` triggered from Add buttons to load available Dota 2 heroes.
-   - A `<DraftSummaryModal>` triggered by the "View Summary" button to show the aggregated read-only view.
+   - A Tab-based `DraftSummary` view to show the aggregated read-only overview (optimized for fast scanning without interrupting the draft flow).
+
+## Visual Identity & Design System
+The application utilizes a **Tactical Esports Dashboard** design system powered by **Tailwind CSS v4**. 
+- It relies on raw Utility tokens defined centrally in `src/index.css`.
+- Core colors: `Primary: #C2410C (Burnt Orange)`, `Secondary: #2563EB (Blue)`, `Background: #0B1020 (Deep Navy/Black)`.
+- It deliberately avoids overly generic component frameworks (like Shadcn) to maintain a highly specific, high-density strategy board aesthetic required by competitive analytic users.
 
 ## State Management Approach
 For state management, we chose a primarily Server-State routing approach via **React Query (`@tanstack/react-query`)**:

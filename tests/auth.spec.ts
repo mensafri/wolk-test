@@ -10,13 +10,12 @@ test.describe('Dota 2 Draft Plans E2E', () => {
     await expect(page).toHaveURL(/.*login/);
 
     // 3. Register a new user
-    // Generate a run-specific username to avoid collisions on re-runs
     const username = `playwright_${Date.now()}`;
     const password = 'testpassword';
 
     // Click 'Register' toggle
-    await page.getByRole('button', { name: 'Register' }).click();
-    await expect(page.getByRole('heading', { name: 'Register New Account' })).toBeVisible();
+    await page.getByRole('button', { name: 'Create an account', exact: true }).click();
+    await expect(page.getByText('Create an account', { exact: true }).first()).toBeVisible();
 
     // Fill form
     await page.getByLabel('Username').fill(username);
@@ -26,53 +25,53 @@ test.describe('Dota 2 Draft Plans E2E', () => {
     page.once('dialog', dialog => dialog.accept());
     
     // Submit
-    await page.getByRole('button', { name: 'Create Account' }).click();
+    await page.getByRole('button', { name: 'Sign Up', exact: true }).click();
 
-    // 4. Assuming it toggled back to Login automatically (based on Login.tsx logic)
-    await expect(page.getByRole('heading', { name: 'Login to Draft Plans' })).toBeVisible();
+    // 4. Assuming it toggled back to Login automatically
+    await expect(page.getByText('Sign in', { exact: true }).first()).toBeVisible();
 
     // Fill Login
     await page.getByLabel('Username').fill(username);
     await page.getByLabel('Password').fill(password);
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click();
 
     // 5. Should be redirected to Draft Plans List
     await expect(page).toHaveURL('/');
     await expect(page.getByRole('heading', { name: 'Your Draft Plans' })).toBeVisible();
 
-    // 6. Create a Draft Plan
-    await page.getByRole('button', { name: 'Create Draft Plan' }).click();
-    await expect(page.getByRole('heading', { name: 'Create New Draft Plan' })).toBeVisible();
-
+    // 6. Create a Draft Plan directly from the panel
     const planName = 'My Awesome TI Draft';
     await page.getByLabel('Plan Name').fill(planName);
     await page.getByLabel('Description (Optional)').fill('Test drafted by Playwright');
     await page.getByRole('button', { name: 'Save Plan' }).click();
 
-    // 7. Should be redirected to Draft Plan Detail page
+    // 7. Click on the newly created Draft Plan card to enter detail view
+    await page.getByText(planName).click();
     await expect(page).toHaveURL(/.*draft\/\d+/);
     await expect(page.getByRole('heading', { name: planName })).toBeVisible();
 
     // 8. Open Hero Browser and ban a hero
-    await page.getByRole('button', { name: 'Add Hero' }).first().click(); // Add Hero to Ban List
-    await expect(page.getByRole('heading', { name: 'Hero Browser' })).toBeVisible();
+    await page.getByRole('button', { name: 'Add Ban' }).click();
+    await expect(page.getByRole('heading', { name: 'Declare Ban Target' })).toBeVisible();
     
     // Search hero
-    await page.getByPlaceholder('Search heroes...').fill('Anti-Mage');
+    await page.getByPlaceholder('Search heroes by name or role...').fill('Anti-Mage');
     // Click Select 
-    await page.getByRole('button', { name: 'Select' }).first().click();
+    await page.getByRole('button', { name: 'SELECT' }).first().click();
+
+    // Wait for modal to hide
+    await expect(page.getByRole('heading', { name: 'Declare Ban Target' })).toBeHidden();
 
     // It should appear in the Ban List
-    await expect(page.getByText('Anti-Mage')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Anti-Mage', exact: true })).toBeVisible();
 
     // 9. Check Draft Summary
-    await page.getByRole('button', { name: 'View Summary' }).click();
-    await expect(page.getByRole('heading', { name: 'Draft Summary' })).toBeVisible();
-    await expect(page.getByText('Banned Heroes (1)')).toBeVisible();
-    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', { name: 'Draft Summary' }).click();
+    await expect(page.getByRole('heading', { name: 'Draft Strategy Summary' })).toBeVisible();
+    await expect(page.getByText('Target Bans').first()).toBeVisible();
 
     // 10. Logout
-    await page.getByRole('button', { name: 'Logout' }).click();
+    await page.getByRole('button', { name: 'Sign Out' }).click();
     await expect(page).toHaveURL(/.*login/);
   });
 });

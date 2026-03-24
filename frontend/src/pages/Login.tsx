@@ -1,102 +1,98 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { login, register } from '../api';
 
-export default function Login({ setToken }: { setToken: (t: string) => void }) {
-  const [isLogin, setIsLogin] = useState(true);
+export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setLoading(true);
+    setError(null);
     try {
       if (isLogin) {
         const res = await login({ username, password });
-        setToken(res.token);
+        localStorage.setItem('token', res.token);
+        navigate('/');
       } else {
         await register({ username, password });
-        setIsLogin(true); // switch to login after successful register
-        alert('Registration successful! Please login.');
+        alert('Account created! Please log in.');
+        setIsLogin(true);
+        setPassword('');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Authentication failed');
+      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-24">
-      {/* Decorative Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-black uppercase tracking-widest text-white drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">
-          Captain's Mode
-        </h1>
-        <p className="text-dota-gold uppercase tracking-[0.15em] text-sm mt-2 opacity-80">
-          Authentication Required
-        </p>
-      </div>
+    <div className="flex bg-tactical-bg min-h-[calc(100vh-64px)] items-center justify-center p-4">
+      <div className="card w-full max-w-md p-6">
+        <div className="mb-6">
+          <h2 className="text-[24px] font-bold tracking-tight text-tactical-text-primary">
+            {isLogin ? 'Sign in' : 'Create an account'}
+          </h2>
+          <p className="text-[14px] text-tactical-text-secondary mt-2">
+            Secure connection to tactical drafting dashboard.
+          </p>
+        </div>
 
-      {/* Main Panel */}
-      <div className="dota-panel p-8">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-dota-gold to-transparent opacity-50"></div>
-        
-        <h2 className="text-xl font-bold text-white mb-6 uppercase tracking-wider border-b border-dota-border pb-3">
-          {isLogin ? 'Enter The Battle' : 'Enlist Now'}
-        </h2>
-        
         {error && (
-          <div className="bg-dota-dire/20 border-l-4 border-dota-dire text-white p-3 mb-6 text-sm">
+          <div className="mb-4 p-3 bg-red-900/30 border border-tactical-error rounded-sm text-tactical-text-primary text-[14px]">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-xs font-bold text-dota-muted uppercase mb-1.5 tracking-wider">Username</label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-medium text-tactical-text-primary" htmlFor="username">Username</label>
             <input
+              id="username"
               type="text"
-              required
+              placeholder="coordinator_01"
+              className="input-field"
               value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="dota-input"
-              placeholder="e.g., Puppey"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-dota-muted uppercase mb-1.5 tracking-wider">Password</label>
-            <input
-              type="password"
+              onChange={(e) => setUsername(e.target.value)}
               required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="dota-input"
-              placeholder="••••••••"
             />
           </div>
-          <button
-            type="submit"
-            className="dota-btn dota-btn-primary w-full mt-6 py-3 text-sm"
-          >
-            {isLogin ? 'Sign In' : 'Create Account'}
+          <div className="flex flex-col gap-2">
+            <label className="text-[14px] font-medium text-tactical-text-primary" htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="input-field"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="btn btn-primary mt-2">
+            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Sign Up')}
           </button>
         </form>
 
-        <div className="mt-8 text-center border-t border-dota-border pt-6">
-          <p className="text-dota-muted text-sm">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button 
-              onClick={() => setIsLogin(!isLogin)} 
-              className="text-dota-gold hover:text-white transition-colors border-b border-dota-gold/30 hover:border-white uppercase tracking-wider text-xs ml-2"
-            >
-              {isLogin ? 'Register' : 'Login'}
-            </button>
-          </p>
-        </div>
-
-        {/* Demo Account Box */}
-        <div className="mt-8 bg-dota-dark/80 border border-dota-border/50 p-4 text-center">
-          <p className="text-xs uppercase tracking-widest text-dota-muted mb-1">Demo Credentials</p>
-          <p className="text-sm font-mono text-dota-gold">testuser / password123</p>
+        <div className="mt-6 border-t border-tactical-border pt-6 text-center">
+          <button 
+            type="button" 
+            onClick={() => setIsLogin(!isLogin)}
+            className="text-[14px] text-tactical-secondary hover:text-tactical-secondary-hover font-medium transition-colors cursor-pointer"
+          >
+            {isLogin ? 'Create an account' : 'Already enlisted? Sign in'}
+          </button>
+          
+          <div className="mt-4 text-[12px] text-tactical-text-secondary">
+            Demo Account: <span className="text-tactical-text-primary">testuser</span> / <span className="text-tactical-text-primary">password123</span>
+          </div>
         </div>
       </div>
     </div>

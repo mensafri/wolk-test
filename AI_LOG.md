@@ -2,7 +2,7 @@
 
 - **AI Tools Used**: Google Deepmind / Agentic Setup
 - **Prompt Records**:
-  - **Prompt 1**: "Pahami seluruh requirement di agents.md..." (Initial System Scaffolding)
+  - **Prompt 1**: "Understand all requirements in agents.md..." (Initial System Scaffolding)
     - Iterations: 1
     - Action: Scaffolded implementation plan, structured the backend schema, setup vite frontend.
   - **Prompt 2**: "Generate the core Express API routes and seed."
@@ -14,12 +14,18 @@
   - **Prompt 4**: "Implement Draft Summary View and format deliverables"
     - Iterations: 1
     - Action: Created the final DraftSummaryModal and all required documentation artifacts.
-  - **Prompt 5**: "di bonus ada yang bisa dikerjakan lagi yaitu ... lalu gimana kalau semuanya dijalankan di docker sekalian?"
+  - **Prompt 5**: "There are bonus requirements we can still do... how about we just run everything in docker?"
     - Iterations: 1
     - Action: Implemented JWT Authentication, PostgreSQL atomic Job Queues (`SKIP LOCKED`), full Dockerization (Dockerfile Frontend & Backend), and Playwright E2E configurations.
-  - **Prompt 6**: Troubleshooting Docker build and run errors ("customEvent is not defined" and "Prisma failed to detect libssl...")
+  - **Prompt 6**: "I tried docker compose up -d --build and got an error... reference customEvent is not defined"
     - Iterations: 2
     - Action: Upgraded Node image to `node:20-alpine` to satisfy Vite v6, and explicitly installed `openssl` via Alpine `apk` for Prisma Engine compatibility.
+  - **Prompt 7**: "The UI still looks too AI, remove shadcn, then do this... You are building a Dota 2 Draft Plans app with a modern tactical esports dashboard visual identity."
+    - Iterations: 2
+    - Action: Completely stripped Shadcn dependencies, manually configured `index.css` with raw Tailwind v4 theme tokens, and rewrote all frontend views to match the rigid tactical design system parameters.
+  - **Prompt 8**: "The E2E tests are all failing, I want you to fix it until the E2E tests pass"
+    - Iterations: 4
+    - Action: Interactively matched Playwright E2E locators against the new Tactical DOM nodes. Resolved race condition issues in testing where modal closings were overlapping with button clicks by enforcing `toBeHidden` strict validations. Fixed missing Hero fetching mappings.
 
-- **Notes**: AI was used primarily for scaffolding React components, generating Express boilerplate, automatically translating `agents.md` requirements into a Prisma database schema, and drafting documentation blocks. AI successfully structured the Docker multi-container environment efficiently.
+- **Notes**: AI was used primarily for scaffolding React components, generating Express boilerplate, automatically translating `agents.md` requirements into a Prisma database schema, drafting documentation blocks, and aggressively debugging integration issues (TypeScript pathing, API payload mismatches, Playwright Locator strict mode violations) alongside iterating a high-fidelity CSS styling system.
 - **Custom Files Provided**: Evaluated strictly from `agents.md`.

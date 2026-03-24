@@ -1,36 +1,104 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+  
+  --color-tactical-bg: #0B1020;
+  --color-tactical-surface: #121A2B;
+  --color-tactical-surface-dark: #080D1A;
+  --color-tactical-primary: #C2410C;
+  --color-tactical-primary-hover: #D84D14;
+  --color-tactical-secondary: #2563EB;
+  --color-tactical-secondary-hover: #1D4ED8;
+  --color-tactical-text-primary: #F8FAFC;
+  --color-tactical-text-secondary: #94A3B8;
+  --color-tactical-border: #243041;
+  
+  --color-tactical-success: #16A34A;
+  --color-tactical-warning: #D97706;
+  --color-tactical-error: #DC2626;
+
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --spacing-12: 48px;
+  --spacing-16: 64px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  --shadow-subtle: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-medium: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-strong: 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 0 1px #C2410C, 0 0 12px rgba(194, 65, 12, 0.4);
+}
 
 @layer base {
   body {
-    @apply bg-dota-bg text-dota-text font-sans antialiased;
-    /* Optional Dota background pattern or vignette */
-    background-image: radial-gradient(circle at center, #1b2229 0%, #0a0d10 100%);
-    min-height: 100vh;
+    background-color: var(--color-tactical-bg);
+    color: var(--color-tactical-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling for tactical feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-tactical-border);
+    border-radius: var(--radius-full);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-tactical-text-secondary);
   }
 }
 
 @layer components {
-  .dota-btn {
-    @apply uppercase tracking-wider font-bold text-xs px-4 py-2 border rounded-sm transition-all duration-200 shadow-dota;
+  .btn {
+    @apply inline-flex items-center justify-center font-bold tracking-wide uppercase text-sm rounded-sm transition-all h-[40px] px-[16px] select-none cursor-pointer;
   }
-  .dota-btn-primary {
-    @apply border-dota-gold text-dota-dark bg-gradient-to-b from-dota-goldhover to-dota-gold hover:brightness-110 shadow-glow;
+  
+  .btn:active {
+    transform: scale(0.98);
   }
-  .dota-btn-secondary {
-    @apply border-dota-border text-dota-text bg-dota-panel hover:bg-dota-border hover:text-white;
+  
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed shadow-none transform-none;
   }
-  .dota-btn-dire {
-    @apply border-dota-dire/50 text-white bg-gradient-to-b from-dota-dire to-[#8a1c1c] hover:brightness-110;
+
+  .btn-primary {
+    @apply bg-tactical-primary text-white shadow-subtle hover:bg-tactical-primary-hover hover:shadow-glow;
   }
-  .dota-btn-radiant {
-    @apply border-dota-radiant/50 text-white bg-gradient-to-b from-[#76b553] to-dota-radiant hover:brightness-110;
+
+  .btn-secondary {
+    @apply bg-transparent border border-tactical-border text-tactical-text-primary hover:bg-tactical-surface-dark hover:border-tactical-text-secondary;
   }
-  .dota-input {
-    @apply w-full bg-dota-dark border border-dota-border rounded-sm px-4 py-2 text-white focus:outline-none focus:border-dota-gold focus:ring-1 focus:ring-dota-gold transition-colors shadow-inner;
+
+  .btn-danger {
+    @apply bg-tactical-error text-white shadow-subtle hover:bg-red-700 hover:shadow-medium;
   }
-  .dota-panel {
-    @apply bg-gradient-to-b from-dota-panel to-dota-bg border border-dota-border rounded-sm shadow-dota relative overflow-hidden;
+
+  .input-field {
+    @apply h-[44px] px-[14px] bg-tactical-surface-dark border border-tactical-border rounded-sm text-tactical-text-primary placeholder:text-tactical-text-secondary transition-all outline-none w-full;
+  }
+  
+  .input-field:focus {
+    @apply border-tactical-primary shadow-glow;
+  }
+
+  .card {
+    @apply bg-tactical-surface border border-tactical-border rounded-md shadow-subtle flex flex-col;
   }
 }

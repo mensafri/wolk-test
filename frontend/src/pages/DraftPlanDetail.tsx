@@ -1,277 +1,275 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams, Link } from 'react-router-dom';
-import { getDraftPlan, getHeroes, addListHero, updateListHero, removeListHero, addThreat, removeThreat, updateThreat, addItemTiming, removeItemTiming } from '../api';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getDraftPlan, addListHero, updateListHero, removeListHero, getHeroes } from '../api';
 import HeroBrowser from '../components/HeroBrowser';
-import DraftSummaryModal from '../components/DraftSummaryModal';
-import type { HeroCache } from '../types';
 
 export default function DraftPlanDetail() {
   const { id } = useParams<{ id: string }>();
-  const planId = parseInt(id!);
-  const queryClient = useQueryClient();
-
-  const [showSummary, setShowSummary] = useState(false);
+  const navigate = useNavigate();
+  const [plan, setPlan] = useState<any>(null);
+  const [heroesDict, setHeroesDict] = useState<Record<number, string>>({});
+  const [activeTab, setActiveTab] = useState<'BANS' | 'PICKS' | 'THREATS' | 'TIMINGS' | 'SUMMARY'>('BANS');
   
-  // Hero Browser Modal State
-  const [browserMode, setBrowserMode] = useState<'NONE' | 'BAN' | 'PREFERRED' | 'THREAT'>('NONE');
+  const [browserMode, setBrowserMode] = useState<'BAN' | 'PICK' | null>(null);
 
-  const { data: plan, isLoading: planLoading } = useQuery({
-    queryKey: ['draftPlan', planId],
-    queryFn: () => getDraftPlan(planId),
-    refetchInterval: 5000 // Polling every 5s to get synergyNote updates from the background worker
-  });
+  useEffect(() => {
+    fetchPlanData();
+    getHeroes().then(data => {
+      const dict: Record<number, string> = {};
+      data.forEach(h => dict[h.id] = h.localizedName);
+      setHeroesDict(dict);
+    }).catch(console.error);
+  }, [id]);
 
-  const { data: heroesCache } = useQuery({
-    queryKey: ['heroes'],
-    queryFn: getHeroes,
-    staleTime: 24 * 60 * 60 * 1000,
-  });
-
-  const invalidatePlan = () => {
-    queryClient.invalidateQueries({ queryKey: ['draftPlan', planId] });
-  };
-
-  const addHeroMut = useMutation({ mutationFn: (data: any) => addListHero(planId, data), onSuccess: invalidatePlan });
-  const updateHeroMut = useMutation({ mutationFn: (data: any) => updateListHero(data.id, data), onSuccess: invalidatePlan });
-  const removeHeroMut = useMutation({ mutationFn: removeListHero, onSuccess: invalidatePlan });
-
-  const addThreatMut = useMutation({ mutationFn: (data: any) => addThreat(planId, data), onSuccess: invalidatePlan });
-  const updateThreatMut = useMutation({ mutationFn: (data: any) => updateThreat(data.id, data), onSuccess: invalidatePlan });
-  const removeThreatMut = useMutation({ mutationFn: removeThreat, onSuccess: invalidatePlan });
-
-  const addTimingMut = useMutation({ mutationFn: (data: any) => addItemTiming(planId, data), onSuccess: invalidatePlan });
-  const removeTimingMut = useMutation({ mutationFn: removeItemTiming, onSuccess: invalidatePlan });
-
-  const handleSelectHero = (hero: HeroCache) => {
-    if (browserMode === 'BAN') {
-      addHeroMut.mutate({ heroId: hero.id, type: 'BAN', note: '' });
-    } else if (browserMode === 'PREFERRED') {
-      addHeroMut.mutate({ heroId: hero.id, type: 'PREFERRED', role: 'Support', priority: 'MEDIUM', note: '' });
-    } else if (browserMode === 'THREAT') {
-      addThreatMut.mutate({ heroId: hero.id, note: '' });
+  const fetchPlanData = async () => {
+    try {
+      const data = await getDraftPlan(Number(id));
+      setPlan(data);
+    } catch (err) {
+      console.error(err);
+      navigate('/');
     }
-    setBrowserMode('NONE');
   };
 
-  // Generic helper for getting hero details
-  const getHeroDetail = (heroId: number) => heroesCache?.find(h => h.id === heroId);
+  const handleHeroSelect = async (heroId: number, name: string) => {
+    if (browserMode === 'BAN') {
+      await addListHero(Number(id), { heroId, heroName: name, type: 'BAN' });
+    } else {
+      await addListHero(Number(id), { heroId, heroName: name, type: 'PREFERRED', role: 'Flex', priority: 'MEDIUM' });
+    }
+    setBrowserMode(null);
+    fetchPlanData();
+  };
 
-  if (planLoading) return <div className="text-center py-20 text-dota-gold uppercase tracking-widest animate-pulse">Loading Battle Plan...</div>;
-  if (!plan) return <div className="text-center py-20 text-dota-dire uppercase tracking-widest">Plan Not Found</div>;
+  const handleUpdateBan = async (banId: number, note: string) => {
+    await updateListHero(banId, { note });
+    fetchPlanData();
+  };
+
+  const handleDeleteBan = async (banId: number) => {
+    await removeListHero(banId);
+    fetchPlanData();
+  };
+
+  const handleUpdatePick = async (pickId: number, updates: any) => {
+    await updateListHero(pickId, updates);
+    fetchPlanData();
+  };
+
+  const handleDeletePick = async (pickId: number) => {
+    await removeListHero(pickId);
+    fetchPlanData();
+  };
+
+  // Helper arrays
+  const bans = plan?.heroes?.filter((h: any) => h.type === 'BAN') || [];
+  const picks = plan?.heroes?.filter((h: any) => h.type === 'PREFERRED') || [];
+  const threats = plan?.enemyThreats || [];
+  const timings = plan?.itemTimings || [];
+
+  if (!plan) return <div className="text-center py-20 text-tactical-text-secondary">Loading operation data...</div>;
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto animate-fade-in relative pb-20">
-      
-      {/* Header Row */}
-      <div className="bg-gradient-to-r from-dota-dark to-dota-panel p-6 border-l-4 border-l-dota-gold flex flex-col md:flex-row justify-between items-start md:items-center shadow-dota">
-        <div>
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-dota-muted hover:text-white uppercase tracking-wider text-sm transition-colors font-bold">← Dashboard</Link>
+    <div className="max-w-6xl mx-auto py-8 px-4 flex flex-col gap-6">
+      {/* PAGE HEADER */}
+      <div className="card p-6 border-l-4 border-l-tactical-primary">
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <h1 className="text-[32px] font-bold text-tactical-text-primary tracking-tight leading-tight">{plan.name}</h1>
+            <p className="text-[16px] text-tactical-text-secondary mt-1">{plan.description || 'No description provided'}</p>
           </div>
-          <h1 className="text-3xl font-black mt-2 text-white uppercase tracking-widest drop-shadow-[0_2px_2px_rgba(0,0,0,1)]">{plan.name}</h1>
-          {plan.description && <p className="text-dota-text font-serif italic mt-1 border-l-2 border-dota-border pl-3">{plan.description}</p>}
-        </div>
-        <div className="mt-4 md:mt-0">
-          <button 
-            onClick={() => setShowSummary(true)} 
-            className="dota-btn dota-btn-primary animate-pulse shadow-glow"
-          >
-            Review Strategy (Summary)
+          <button onClick={() => navigate('/')} className="btn btn-secondary shrink-0">
+            Back to Plans
           </button>
         </div>
       </div>
 
-      {plan.synergyNote && (
-        <div className="bg-dota-dark border border-dota-border p-4 flex gap-4 items-center">
-          <div className="w-10 h-10 bg-dota-panel rounded-full border border-dota-radiant flex items-center justify-center shrink-0 shadow-glow">
-            <span className="text-dota-radiant font-black">AI</span>
-          </div>
-          <div>
-            <span className="text-xs uppercase tracking-widest text-dota-radiant font-bold block mb-1">Analyzer Worker Result</span>
-            <span className="text-sm font-mono text-dota-text">{plan.synergyNote}</span>
-          </div>
-        </div>
-      )}
+      {/* TABS SEGMENTED CONTROL */}
+      <div className="flex bg-tactical-surface-dark border p-1 border-tactical-border rounded-lg shadow-subtle overflow-x-auto w-fit">
+        {[
+          { id: 'BANS', label: `Ban List (${bans.length})` },
+          { id: 'PICKS', label: `Preferred Picks (${picks.length})` },
+          { id: 'THREATS', label: `Enemy Threats (${threats.length})` },
+          { id: 'TIMINGS', label: `Key Timings (${timings.length})` },
+          { id: 'SUMMARY', label: 'Draft Summary' }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            className={`px-4 py-2 text-[14px] font-medium rounded-md whitespace-nowrap transition-all duration-200 ${
+              activeTab === tab.id 
+                ? 'bg-tactical-primary text-white shadow-subtle' 
+                : 'text-tactical-text-secondary hover:text-tactical-text-primary hover:bg-tactical-surface'
+            }`}
+            onClick={() => setActiveTab(tab.id as any)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Main Grid: Bans | Preferred */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* TAB CONTENTS */}
+      <div className="flex flex-col gap-6">
         
-        {/* Ban List */}
-        <section className="dota-panel">
-          <div className="p-4 border-b border-dota-dire/30 bg-gradient-to-r from-[#2c1313] to-transparent flex justify-between items-center">
-            <h2 className="text-xl font-black uppercase tracking-widest text-dota-dire drop-shadow-[0_1px_1px_rgba(0,0,0,1)]">Ban List</h2>
-            <button onClick={() => setBrowserMode('BAN')} className="dota-btn dota-btn-dire py-1 px-3 text-xs">+ Ban Hero</button>
-          </div>
-          <div className="p-4 space-y-4">
-            {plan.heroes.filter(h => h.type === 'BAN').map(h => {
-              const hero = getHeroDetail(h.heroId);
-              return (
-                <div key={h.id} className="bg-dota-dark p-3 border border-dota-border/50 hover:border-dota-dire/50 transition-colors flex gap-4 group">
-                  <div className="w-12 h-12 bg-dota-panel border border-dota-border flex justify-center items-center text-dota-dire font-black text-xl shrink-0">
-                    {hero?.localizedName?.charAt(0) || '?'}
+        {/* BAN LIST TAB */}
+        {activeTab === 'BANS' && (
+          <div className="card p-6 flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-tactical-border pb-4">
+              <h2 className="text-[20px] font-bold text-tactical-text-primary">Target Bans</h2>
+              <button className="btn btn-danger" onClick={() => setBrowserMode('BAN')}>Add Ban</button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {bans.length === 0 && <p className="text-tactical-text-secondary text-[14px] col-span-full">No bans registered.</p>}
+              {bans.map((b: any) => {
+                const heroName = heroesDict[b.heroId] || 'Unknown Hero';
+                return (
+                <div key={b.id} className="flex bg-tactical-surface-dark border border-tactical-border rounded-sm overflow-hidden h-24 shadow-subtle">
+                  <div className="w-24 shrink-0 bg-tactical-bg flex items-center justify-center border-r border-tactical-border relative overflow-hidden">
+                    {/* Placeholder for avatar mapping */}
+                    <div className="absolute inset-0 opacity-20 bg-tactical-error"></div>
+                    <span className="text-[12px] font-bold z-10 text-center break-words px-1">{heroName}</span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                       <span className="font-bold text-white uppercase tracking-wider">{hero?.localizedName}</span>
-                       <button onClick={() => removeHeroMut.mutate(h.id)} className="text-dota-muted hover:text-dota-dire font-bold text-xs">Remove</button>
+                  <div className="p-3 flex flex-col flex-1 gap-2">
+                    <div className="flex justify-between items-start gap-2">
+                       <h3 className="font-bold text-[16px] text-tactical-text-primary leading-none">{heroName}</h3>
+                       <button onClick={() => handleDeleteBan(b.id)} className="text-[12px] text-tactical-text-secondary hover:text-tactical-error uppercase tracking-wider font-bold">Remove</button>
                     </div>
                     <input 
                       type="text" 
-                      placeholder="Add a reason to ban..."
-                      className="dota-input py-1 text-sm bg-dota-panel border-none font-serif italic w-full"
-                      value={h.note || ''}
-                      onChange={e => updateHeroMut.mutate({ id: h.id, note: e.target.value })}
-                      onBlur={() => updateHeroMut.mutate({ id: h.id, note: h.note })}
+                      value={b.note || ''} 
+                      onChange={e => handleUpdateBan(b.id, e.target.value)}
+                      placeholder="Reason for ban..."
+                      className="text-[12px] bg-transparent border-b border-tactical-border text-tactical-text-primary placeholder:text-tactical-text-secondary focus:outline-none focus:border-tactical-primary pb-1 w-full mt-auto"
                     />
                   </div>
                 </div>
-              );
-            })}
-            {plan.heroes.filter(h => h.type === 'BAN').length === 0 && (
-              <div className="p-6 text-center text-dota-muted uppercase tracking-wider text-xs border border-dashed border-dota-border">
-                No heroes assigned to the ban list
-              </div>
-            )}
+              )})}
+            </div>
           </div>
-        </section>
+        )}
 
-        {/* Preferred Picks */}
-        <section className="dota-panel">
-          <div className="p-4 border-b border-dota-radiant/30 bg-gradient-to-r from-[#172c13] to-transparent flex justify-between items-center">
-            <h2 className="text-xl font-black uppercase tracking-widest text-dota-radiant drop-shadow-[0_1px_1px_rgba(0,0,0,1)]">Preferred Picks</h2>
-            <button onClick={() => setBrowserMode('PREFERRED')} className="dota-btn dota-btn-radiant py-1 px-3 text-xs">+ Pick Hero</button>
-          </div>
-          <div className="p-4 space-y-4">
-            {plan.heroes.filter(h => h.type === 'PREFERRED').map(h => {
-              const hero = getHeroDetail(h.heroId);
-              return (
-                <div key={h.id} className="bg-dota-dark p-3 border border-dota-border/50 hover:border-dota-radiant/50 transition-colors flex gap-4 group">
-                  <div className="w-12 h-12 bg-dota-panel border border-dota-border flex justify-center items-center text-dota-radiant font-black text-xl shrink-0">
-                    {hero?.localizedName?.charAt(0) || '?'}
+        {/* PREFERRED PICKS TAB */}
+        {activeTab === 'PICKS' && (
+          <div className="card p-6 flex flex-col gap-4">
+            <div className="flex justify-between items-center border-b border-tactical-border pb-4">
+              <h2 className="text-[20px] font-bold text-tactical-text-primary">Preferred Picks</h2>
+              <button className="btn btn-primary" onClick={() => setBrowserMode('PICK')}>Add Pick</button>
+            </div>
+            
+            <div className="flex flex-col gap-4">
+              {picks.length === 0 && <p className="text-tactical-text-secondary text-[14px]">No picks registered.</p>}
+              {picks.map((p: any) => {
+                const heroName = heroesDict[p.heroId] || 'Unknown Hero';
+                return (
+                <div key={p.id} className="flex flex-col sm:flex-row bg-tactical-surface-dark border border-tactical-border rounded-sm shadow-subtle overflow-hidden">
+                  <div className="w-full sm:w-32 shrink-0 bg-tactical-bg border-b sm:border-b-0 sm:border-r border-tactical-border flex items-center justify-center py-4 relative overflow-hidden">
+                     <div className="absolute inset-0 opacity-20 bg-tactical-success"></div>
+                     <span className="font-bold z-10 text-center">{heroName}</span>
                   </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="flex justify-between items-center">
-                       <span className="font-bold text-white uppercase tracking-wider">{hero?.localizedName}</span>
-                       <button onClick={() => removeHeroMut.mutate(h.id)} className="text-dota-muted hover:text-dota-dire font-bold text-xs">Remove</button>
-                    </div>
-                    <div className="flex gap-2">
+                  <div className="p-4 flex flex-1 flex-wrap gap-4 items-end">
+                    <div className="flex flex-col gap-1 w-full sm:w-auto">
+                      <label className="text-[12px] text-tactical-text-secondary uppercase tracking-wide font-bold">Role</label>
                       <select 
-                        value={h.role || 'Any'} 
-                        onChange={e => updateHeroMut.mutate({ id: h.id, role: e.target.value, priority: h.priority, note: h.note })}
-                        className="bg-dota-panel border border-dota-border rounded-sm text-xs text-white p-1 outline-none"
+                        className="input-field h-8 text-[14px] bg-tactical-surface"
+                        value={p.role} 
+                        onChange={e => handleUpdatePick(p.id, { role: e.target.value })}
                       >
-                        <option>Carry</option><option>Mid</option><option>Offlane</option><option>Support</option><option>Hard Support</option><option>Any</option>
-                      </select>
-                      <select 
-                        value={h.priority || 'MEDIUM'} 
-                        onChange={e => updateHeroMut.mutate({ id: h.id, role: h.role, priority: e.target.value, note: h.note })}
-                        className={`bg-dota-panel border rounded-sm text-xs p-1 outline-none font-bold ${h.priority === 'HIGH' ? 'border-dota-radiant text-dota-radiant' : h.priority === 'LOW' ? 'border-dota-muted text-dota-muted' : 'border-dota-gold text-dota-gold'}`}
-                      >
-                        <option>HIGH</option><option>MEDIUM</option><option>LOW</option>
+                        <option>Carry</option><option>Mid</option><option>Offlane</option><option>Support</option><option>Hard Support</option><option>Flex</option>
                       </select>
                     </div>
-                    <input 
-                      type="text" 
-                      placeholder="Pick condition/synergy note..."
-                      className="dota-input py-1 text-sm bg-dota-panel border-none font-serif italic w-full"
-                      value={h.note || ''}
-                      onChange={e => updateHeroMut.mutate({ id: h.id, role: h.role, priority: h.priority, note: e.target.value })}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            {plan.heroes.filter(h => h.type === 'PREFERRED').length === 0 && (
-              <div className="p-6 text-center text-dota-muted uppercase tracking-wider text-xs border border-dashed border-dota-border">
-                No heroes assigned to the preferred picks
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Grid: Enemy Threats | Item Timings */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Enemy Threats */}
-        <section className="dota-panel">
-          <div className="p-4 border-b border-orange-500/30 flex justify-between items-center">
-            <h2 className="text-xl font-black uppercase tracking-widest text-orange-400">Enemy Threats</h2>
-            <button onClick={() => setBrowserMode('THREAT')} className="dota-btn dota-btn-secondary py-1 px-3 text-xs border-orange-500/50 hover:bg-orange-500 hover:text-white hover:border-orange-500">+ Add Threat</button>
-          </div>
-          <div className="p-4 space-y-4">
-             {plan.enemyThreats.map(t => {
-               const hero = getHeroDetail(t.heroId);
-               return (
-                 <div key={t.id} className="bg-dota-dark p-3 border border-orange-900/50 flex flex-col gap-2">
-                    <div className="flex justify-between">
-                      <span className="font-bold text-orange-300 uppercase tracking-wider">{hero?.localizedName || 'Unknown'}</span>
-                      <button onClick={() => removeThreatMut.mutate(t.id)} className="text-dota-muted hover:text-dota-dire text-xs font-bold">Remove</button>
+                    <div className="flex flex-col gap-1 w-full sm:w-auto">
+                      <label className="text-[12px] text-tactical-text-secondary uppercase tracking-wide font-bold">Priority</label>
+                      <select 
+                        className={`input-field h-8 text-[14px] font-bold ${p.priority === 'High' ? 'text-tactical-primary bg-tactical-primary/10 border-tactical-primary' : p.priority === 'Medium' ? 'text-tactical-secondary bg-tactical-secondary/10' : 'text-tactical-text-secondary'}`}
+                        value={p.priority} 
+                        onChange={e => handleUpdatePick(p.id, { priority: e.target.value })}
+                      >
+                        <option>High</option><option>Medium</option><option>Low</option>
+                      </select>
                     </div>
-                    <input 
-                      type="text"
-                      placeholder="Why is this hero a threat?"
-                      className="dota-input py-1 text-sm bg-dota-panel border-none font-serif w-full"
-                      value={t.note || ''}
-                      onChange={e => updateThreatMut.mutate({ id: t.id, note: e.target.value })}
-                    />
-                 </div>
-               );
-             })}
-             {plan.enemyThreats.length === 0 && <div className="text-xs uppercase tracking-widest text-dota-muted text-center py-6">No threats listed</div>}
-          </div>
-        </section>
-
-        {/* Item Timings */}
-        <section className="dota-panel">
-          <div className="p-4 border-b border-cyan-500/30">
-            <h2 className="text-xl font-black uppercase tracking-widest text-cyan-400">Key Timings</h2>
-          </div>
-          <div className="p-4 space-y-4">
-             {plan.itemTimings.map(it => (
-                <div key={it.id} className="bg-dota-dark p-3 border-l-2 border-cyan-600 flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <div className="font-bold font-mono text-cyan-300 text-sm mb-1">{it.timing}</div>
-                    <div className="text-sm text-dota-text">{it.explanation}</div>
+                    <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                      <label className="text-[12px] text-tactical-text-secondary uppercase tracking-wide font-bold">Tactical Notes</label>
+                      <input 
+                        type="text" 
+                        className="input-field h-8 text-[14px]"
+                        placeholder="Synergy or draft condition..."
+                        value={p.note || ''} 
+                        onChange={e => handleUpdatePick(p.id, { note: e.target.value })}
+                      />
+                    </div>
+                    <button onClick={() => handleDeletePick(p.id)} className="btn hover:bg-tactical-error hover:text-white border border-transparent text-tactical-text-secondary h-8 px-3 ml-auto shrink-0">
+                      Remove
+                    </button>
                   </div>
-                  <button onClick={() => removeTimingMut.mutate(it.id)} className="text-dota-muted hover:text-dota-dire text-xs font-bold shrink-0">Remove</button>
                 </div>
-             ))}
-             
-             {/* Add Timing Form Inline */}
-             <form onSubmit={e => {
-               e.preventDefault();
-               const target = e.target as any;
-               addTimingMut.mutate({ timing: target.timing.value, explanation: target.exp.value });
-               target.reset();
-             }} className="border border-dota-border bg-dota-dark p-3 mt-4 space-y-3">
-                <input name="timing" required placeholder="Timing Marker (e.g. BKB ~18 min)" className="dota-input text-sm py-1.5" />
-                <input name="exp" required placeholder="Explanation (e.g. Protects carry from magical burst)" className="dota-input text-sm py-1.5" />
-                <button type="submit" className="dota-btn dota-btn-secondary text-xs w-full py-1.5">Record Timing</button>
-             </form>
+              )})}
+            </div>
           </div>
-        </section>
+        )}
+
+        {/* THREATS & TIMINGS */}
+        {(activeTab === 'THREATS' || activeTab === 'TIMINGS') && (
+           <div className="card p-12 flex flex-col items-center justify-center text-center border-dashed border-tactical-border bg-transparent shadow-none">
+             <p className="text-[16px] text-tactical-text-secondary mb-2">Extended Tactical Modules (API Incomplete)</p>
+             <p className="text-[14px] text-tactical-text-secondary opacity-70">Enemies and Timings modules are designated for future firmware updates.</p>
+           </div>
+        )}
+
+        {/* SUMMARY TAB */}
+        {activeTab === 'SUMMARY' && (
+          <div className="card p-6 flex flex-col gap-8 bg-tactical-surface-dark">
+            <div className="flex flex-col gap-2">
+               <h2 className="text-[24px] font-bold text-tactical-text-primary tracking-tight">Draft Strategy Summary</h2>
+               <p className="text-[14px] text-tactical-text-secondary tracking-wide uppercase">Operational Overview — {plan.name}</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex flex-col gap-3">
+                <h3 className="text-[16px] font-bold text-tactical-error uppercase tracking-wider border-b border-tactical-border pb-2">Target Bans</h3>
+                {bans.length === 0 ? <p className="text-[12px] text-tactical-text-secondary">No bans assigned.</p> : (
+                  <ul className="flex flex-col gap-2">
+                    {bans.map((b: any) => {
+                      const heroName = heroesDict[b.heroId] || 'Unknown Hero';
+                      return (
+                      <li key={b.id} className="flex justify-between items-baseline gap-2">
+                        <span className="font-bold text-[14px]">{heroName}</span>
+                        <span className="text-[12px] text-tactical-text-secondary italic border-b border-tactical-border border-dotted flex-1 text-right">{b.note || 'No notes'}</span>
+                      </li>
+                    )})}
+                  </ul>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <h3 className="text-[16px] font-bold text-tactical-success uppercase tracking-wider border-b border-tactical-border pb-2">Priority Picks</h3>
+                {picks.length === 0 ? <p className="text-[12px] text-tactical-text-secondary">No picks assigned.</p> : (
+                  <ul className="flex flex-col gap-3">
+                    {picks.map((p: any) => {
+                      const heroName = heroesDict[p.heroId] || 'Unknown Hero';
+                      return (
+                      <li key={p.id} className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center">
+                           <span className="font-bold text-[14px]">{heroName} <span className="text-[12px] font-normal text-tactical-text-secondary ml-1">— {p.role}</span></span>
+                           <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-sm ${p.priority === 'High' ? 'bg-tactical-primary text-white' : p.priority === 'Medium' ? 'bg-tactical-secondary text-white' : 'bg-tactical-border text-tactical-text-secondary'}`}>
+                             {p.priority}
+                           </span>
+                        </div>
+                        {p.note && <span className="text-[12px] text-tactical-text-secondary italic">{p.note}</span>}
+                      </li>
+                    )})}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modals */}
-      {browserMode !== 'NONE' && (
+      {/* MODALS */}
+      {browserMode && (
         <HeroBrowser 
-          title={browserMode === 'PREFERRED' ? 'Select Preferred Pick' : browserMode === 'THREAT' ? 'Identify Enemy Threat' : 'Declare Ban'}
-          onClose={() => setBrowserMode('NONE')}
-          onSelectHero={handleSelectHero}
-          // Don't hide heroes here since they might want to ban an already preferred hero (to swap), but standard practice is to hide what's already in the same list.
-          hideHeroes={
-            browserMode === 'THREAT' ? plan.enemyThreats.map(t => t.heroId) : 
-            plan.heroes.filter(h => h.type === browserMode).map(h => h.heroId)
-          }
-        />
-      )}
-
-      {showSummary && (
-        <DraftSummaryModal 
-          plan={plan} 
-          heroesCache={heroesCache || []} 
-          onClose={() => setShowSummary(false)} 
+          mode={browserMode} 
+          onClose={() => setBrowserMode(null)} 
+          onSelect={handleHeroSelect} 
         />
       )}
     </div>
