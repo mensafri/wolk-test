@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DraftPlan {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  heroes       ListHero[]
+  enemyThreats EnemyThreat[]
+  itemTimings  ItemTiming[]
+}
+
+enum HeroListType {
+  BAN
+  PREFERRED
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model ListHero {
+  id          Int          @id @default(autoincrement())
+  draftPlanId Int
+  heroId      Int
+  type        HeroListType
+  role        String?
+  priority    Priority?
+  note        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  draftPlan DraftPlan @relation(fields: [draftPlanId], references: [id], onDelete: Cascade)
+}
+
+model EnemyThreat {
+  id          Int      @id @default(autoincrement())
+  draftPlanId Int
+  heroId      Int
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  draftPlan DraftPlan @relation(fields: [draftPlanId], references: [id], onDelete: Cascade)
+}
+
+model ItemTiming {
+  id          Int      @id @default(autoincrement())
+  draftPlanId Int
+  timing      String
+  explanation String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  draftPlan DraftPlan @relation(fields: [draftPlanId], references: [id], onDelete: Cascade)
+}
+
+model HeroCache {
+  id            Int      @id
+  name          String
+  localizedName String
+  primaryAttr   String
+  attackType    String
+  roles         String[]
+  legs          Int
+  imageUrl      String?
+  updatedAt     DateTime @updatedAt
+}

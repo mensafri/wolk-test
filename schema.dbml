@@ -1,0 +1,49 @@
+Table DraftPlan {
+  id Int [pk, increment]
+  name String [not null]
+  description String
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table ListHero {
+  id Int [pk, increment]
+  draftPlanId Int [not null, ref: > DraftPlan.id]
+  heroId Int [not null]
+  type String [not null, note: '"BAN" or "PREFERRED"']
+  role String
+  priority String [note: '"HIGH", "MEDIUM", "LOW"']
+  note String
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table EnemyThreat {
+  id Int [pk, increment]
+  draftPlanId Int [not null, ref: > DraftPlan.id]
+  heroId Int [not null]
+  note String
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table ItemTiming {
+  id Int [pk, increment]
+  draftPlanId Int [not null, ref: > DraftPlan.id]
+  timing String [not null]
+  explanation String [not null]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table HeroCache {
+  id Int [pk]
+  name String [not null]
+  localizedName String [not null]
+  primaryAttr String [not null]
+  attackType String [not null]
+  roles String[] [not null]
+  legs Int [not null]
+  imageUrl String
+  updatedAt DateTime
+}
