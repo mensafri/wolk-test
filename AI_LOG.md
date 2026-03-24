@@ -17,6 +17,9 @@
   - **Prompt 5**: "di bonus ada yang bisa dikerjakan lagi yaitu ... lalu gimana kalau semuanya dijalankan di docker sekalian?"
     - Iterations: 1
     - Action: Implemented JWT Authentication, PostgreSQL atomic Job Queues (`SKIP LOCKED`), full Dockerization (Dockerfile Frontend & Backend), and Playwright E2E configurations.
+  - **Prompt 6**: Troubleshooting Docker build and run errors ("customEvent is not defined" and "Prisma failed to detect libssl...")
+    - Iterations: 2
+    - Action: Upgraded Node image to `node:20-alpine` to satisfy Vite v6, and explicitly installed `openssl` via Alpine `apk` for Prisma Engine compatibility.
 
 - **Notes**: AI was used primarily for scaffolding React components, generating Express boilerplate, automatically translating `agents.md` requirements into a Prisma database schema, and drafting documentation blocks. AI successfully structured the Docker multi-container environment efficiently.
 - **Custom Files Provided**: Evaluated strictly from `agents.md`.
