@@ -11,6 +11,84 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey123';
+const HERO_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function resolveHeroImageUrl(imgPath?: string | null) {
+  if (!imgPath) return undefined;
+  const normalizedPath = imgPath.replace(/\?$/, '');
+  if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+  return `https://cdn.cloudflare.steamstatic.com${normalizedPath}`;
+}
+
+async function userOwnsDraftPlan(draftPlanId: number, userId: number) {
+  const plan = await prisma.draftPlan.findUnique({
+    where: { id: draftPlanId },
+    select: { userId: true }
+  });
+
+  if (!plan) return 'NOT_FOUND' as const;
+  if (plan.userId !== userId) return 'FORBIDDEN' as const;
+  return 'OK' as const;
+}
+
+async function userOwnsListHero(listHeroId: number, userId: number) {
+  const listHero = await prisma.listHero.findUnique({
+    where: { id: listHeroId },
+    select: {
+      draftPlan: {
+        select: { userId: true }
+      }
+    }
+  });
+
+  if (!listHero) return 'NOT_FOUND' as const;
+  if (listHero.draftPlan.userId !== userId) return 'FORBIDDEN' as const;
+  return 'OK' as const;
+}
+
+async function userOwnsThreat(threatId: number, userId: number) {
+  const threat = await prisma.enemyThreat.findUnique({
+    where: { id: threatId },
+    select: {
+      draftPlan: {
+        select: { userId: true }
+      }
+    }
+  });
+
+  if (!threat) return 'NOT_FOUND' as const;
+  if (threat.draftPlan.userId !== userId) return 'FORBIDDEN' as const;
+  return 'OK' as const;
+}
+
+async function userOwnsTiming(timingId: number, userId: number) {
+  const timing = await prisma.itemTiming.findUnique({
+    where: { id: timingId },
+    select: {
+      draftPlan: {
+        select: { userId: true }
+      }
+    }
+  });
+
+  if (!timing) return 'NOT_FOUND' as const;
+  if (timing.draftPlan.userId !== userId) return 'FORBIDDEN' as const;
+  return 'OK' as const;
+}
+
+function handleOwnershipResult(res: Response, result: 'OK' | 'NOT_FOUND' | 'FORBIDDEN') {
+  if (result === 'NOT_FOUND') {
+    res.status(404).json({ error: 'Not found' });
+    return false;
+  }
+
+  if (result === 'FORBIDDEN') {
+    res.status(403).json({ error: 'Forbidden' });
+    return false;
+  }
+
+  return true;
+}
 
 // Extend Express Request
 declare module 'express-serve-static-core' {
@@ -67,9 +145,38 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/draft-plans', authenticateToken, async (req, res) => {
   const plans = await prisma.draftPlan.findMany({
     where: { userId: req.user!.id },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      createdAt: true,
+      updatedAt: true,
+      heroes: {
+        select: { type: true }
+      },
+      _count: {
+        select: {
+          enemyThreats: true,
+          itemTimings: true
+        }
+      }
+    },
     orderBy: { createdAt: 'desc' }
   });
-  res.json(plans);
+
+  res.json(
+    plans.map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      createdAt: plan.createdAt,
+      updatedAt: plan.updatedAt,
+      banCount: plan.heroes.filter((hero) => hero.type === 'BAN').length,
+      pickCount: plan.heroes.filter((hero) => hero.type === 'PREFERRED').length,
+      threatCount: plan._count.enemyThreats,
+      timingCount: plan._count.itemTimings
+    }))
+  );
 });
 
 app.post('/api/draft-plans', authenticateToken, async (req, res) => {
@@ -108,11 +215,13 @@ app.get('/api/draft-plans/:id', authenticateToken, async (req, res) => {
 });
 
 // --- List Heroes & Threats Operations ---
-// Note: In real production, we'd verify DraftPlan ownership before mutating its children.
 
 app.post('/api/draft-plans/:id/heroes', authenticateToken, async (req, res) => {
   const draftPlanId = parseInt(req.params.id as string);
   const { heroId, type, role, priority, note } = req.body;
+  const ownership = await userOwnsDraftPlan(draftPlanId, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   const listHero = await prisma.listHero.create({
     data: { draftPlanId, heroId: parseInt(heroId), type, role, priority, note }
   });
@@ -122,6 +231,9 @@ app.post('/api/draft-plans/:id/heroes', authenticateToken, async (req, res) => {
 app.put('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) => {
   const id = parseInt(req.params.heroId as string);
   const { role, priority, note } = req.body;
+  const ownership = await userOwnsListHero(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   const listHero = await prisma.listHero.update({
     where: { id },
     data: { role, priority, note }
@@ -131,6 +243,9 @@ app.put('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) =
 
 app.delete('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res) => {
   const id = parseInt(req.params.heroId as string);
+  const ownership = await userOwnsListHero(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   await prisma.listHero.delete({ where: { id } });
   res.json({ success: true });
 });
@@ -138,6 +253,9 @@ app.delete('/api/draft-plans/heroes/:heroId', authenticateToken, async (req, res
 app.post('/api/draft-plans/:id/threats', authenticateToken, async (req, res) => {
   const draftPlanId = parseInt(req.params.id as string);
   const { heroId, note } = req.body;
+  const ownership = await userOwnsDraftPlan(draftPlanId, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   const threat = await prisma.enemyThreat.create({
     data: { draftPlanId, heroId: parseInt(heroId), note }
   });
@@ -147,6 +265,9 @@ app.post('/api/draft-plans/:id/threats', authenticateToken, async (req, res) => 
 app.put('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res) => {
   const id = parseInt(req.params.threatId as string);
   const { note } = req.body;
+  const ownership = await userOwnsThreat(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   const threat = await prisma.enemyThreat.update({
     where: { id },
     data: { note }
@@ -156,6 +277,9 @@ app.put('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res
 
 app.delete('/api/draft-plans/threats/:threatId', authenticateToken, async (req, res) => {
   const id = parseInt(req.params.threatId as string);
+  const ownership = await userOwnsThreat(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   await prisma.enemyThreat.delete({ where: { id } });
   res.json({ success: true });
 });
@@ -163,6 +287,9 @@ app.delete('/api/draft-plans/threats/:threatId', authenticateToken, async (req, 
 app.post('/api/draft-plans/:id/item-timings', authenticateToken, async (req, res) => {
   const draftPlanId = parseInt(req.params.id as string);
   const { timing, explanation } = req.body;
+  const ownership = await userOwnsDraftPlan(draftPlanId, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   const itemTiming = await prisma.itemTiming.create({
     data: { draftPlanId, timing, explanation }
   });
@@ -171,39 +298,86 @@ app.post('/api/draft-plans/:id/item-timings', authenticateToken, async (req, res
 
 app.delete('/api/draft-plans/item-timings/:timingId', authenticateToken, async (req, res) => {
   const id = parseInt(req.params.timingId as string);
+  const ownership = await userOwnsTiming(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
   await prisma.itemTiming.delete({ where: { id } });
   res.json({ success: true });
 });
 
+app.put('/api/draft-plans/item-timings/:timingId', authenticateToken, async (req, res) => {
+  const id = parseInt(req.params.timingId as string);
+  const { timing, explanation } = req.body;
+  const ownership = await userOwnsTiming(id, req.user!.id);
+  if (!handleOwnershipResult(res, ownership)) return;
+
+  const itemTiming = await prisma.itemTiming.update({
+    where: { id },
+    data: { timing, explanation }
+  });
+  res.json(itemTiming);
+});
+
 // --- OpenDota Heroes integration & caching ---
 app.get('/api/heroes', authenticateToken, async (req, res) => {
+  let cachedHeroes: Awaited<ReturnType<typeof prisma.heroCache.findMany>> = [];
   try {
-    const cachedHeroes = await prisma.heroCache.findMany();
+    cachedHeroes = await prisma.heroCache.findMany({
+      orderBy: { localizedName: 'asc' }
+    });
+
     if (cachedHeroes.length > 0) {
       const firstHero = cachedHeroes[0];
-      const cacheAgems = new Date().getTime() - new Date(firstHero.updatedAt).getTime();
-      if (cacheAgems < 24 * 60 * 60 * 1000) {
+      const cacheAgeMs = new Date().getTime() - new Date(firstHero.updatedAt).getTime();
+      const cacheHasImages = cachedHeroes.every(hero => Boolean(hero.imageUrl));
+      const cacheUsesReachableImageHost = cachedHeroes.every(hero =>
+        !hero.imageUrl || hero.imageUrl.startsWith('https://cdn.cloudflare.steamstatic.com/')
+      );
+
+      if (cacheAgeMs < HERO_CACHE_MAX_AGE_MS && cacheHasImages && cacheUsesReachableImageHost) {
         return res.json(cachedHeroes);
       }
     }
 
-    const response = await axios.get('https://api.opendota.com/api/heroes');
+    const response = await axios.get('https://api.opendota.com/api/heroStats');
     const heroesData = response.data;
     
     // Using transaction for bulk upserts efficiently in pg
     const savePromises = heroesData.map((h: any) => 
       prisma.heroCache.upsert({
         where: { id: h.id },
-        update: { name: h.name, localizedName: h.localized_name, primaryAttr: h.primary_attr, attackType: h.attack_type, roles: h.roles, legs: h.legs },
-        create: { id: h.id, name: h.name, localizedName: h.localized_name, primaryAttr: h.primary_attr, attackType: h.attack_type, roles: h.roles, legs: h.legs }
+        update: {
+          name: h.name,
+          localizedName: h.localized_name,
+          primaryAttr: h.primary_attr,
+          attackType: h.attack_type,
+          roles: h.roles ?? [],
+          legs: h.legs,
+          imageUrl: resolveHeroImageUrl(h.img)
+        },
+        create: {
+          id: h.id,
+          name: h.name,
+          localizedName: h.localized_name,
+          primaryAttr: h.primary_attr,
+          attackType: h.attack_type,
+          roles: h.roles ?? [],
+          legs: h.legs,
+          imageUrl: resolveHeroImageUrl(h.img)
+        }
       })
     );
     await Promise.all(savePromises);
     
-    const freshHeroes = await prisma.heroCache.findMany();
+    const freshHeroes = await prisma.heroCache.findMany({
+      orderBy: { localizedName: 'asc' }
+    });
     res.json(freshHeroes);
   } catch (error) {
     console.error('Failed to fetch heroes', error);
+    if (cachedHeroes.length > 0) {
+      return res.json(cachedHeroes);
+    }
     res.status(500).json({ error: 'Failed to fetch heroes' });
   }
 });

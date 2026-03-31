@@ -17,8 +17,14 @@ async function main() {
     }
   });
 
-  // Sample Draft Plan
-  const plan1 = await prisma.draftPlan.create({
+  const existingPlan = await prisma.draftPlan.findFirst({
+    where: {
+      userId: testUser.id,
+      name: 'TI 13 Grand Finals Game 1',
+    }
+  });
+
+  const plan1 = existingPlan ?? await prisma.draftPlan.create({
     data: {
       userId: testUser.id,
       name: 'TI 13 Grand Finals Game 1',

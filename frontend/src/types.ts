@@ -6,6 +6,13 @@ export interface DraftPlan {
   updatedAt: string;
 }
 
+export interface DraftPlanListItem extends DraftPlan {
+  banCount: number;
+  pickCount: number;
+  threatCount: number;
+  timingCount: number;
+}
+
 export interface HeroCache {
   id: number;
   name: string;

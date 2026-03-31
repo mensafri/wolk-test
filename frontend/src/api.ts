@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { DraftPlan, DraftPlanDetailData, HeroCache } from './types';
+import type { DraftPlan, DraftPlanDetailData, DraftPlanListItem, HeroCache } from './types';
 
 const api = axios.create({
   baseURL: '/api'
@@ -13,7 +13,7 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-export const getDraftPlans = () => api.get<DraftPlan[]>('/draft-plans').then(res => res.data);
+export const getDraftPlans = () => api.get<DraftPlanListItem[]>('/draft-plans').then(res => res.data);
 export const createDraftPlan = (data: { name: string, description?: string }) => api.post<DraftPlan>('/draft-plans', data).then(res => res.data);
 export const getDraftPlan = (id: number) => api.get<DraftPlanDetailData>(`/draft-plans/${id}`).then(res => res.data);
 
@@ -31,4 +31,5 @@ export const updateThreat = (threatId: number, data: any) => api.put(`/draft-pla
 export const removeThreat = (threatId: number) => api.delete(`/draft-plans/threats/${threatId}`).then(res => res.data);
 
 export const addItemTiming = (planId: number, data: any) => api.post(`/draft-plans/${planId}/item-timings`, data).then(res => res.data);
+export const updateItemTiming = (timingId: number, data: any) => api.put(`/draft-plans/item-timings/${timingId}`, data).then(res => res.data);
 export const removeItemTiming = (timingId: number) => api.delete(`/draft-plans/item-timings/${timingId}`).then(res => res.data);
