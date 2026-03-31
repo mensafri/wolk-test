@@ -8,6 +8,14 @@ The system follows a classic decoupled 3-tier architecture:
 2. **Backend**: Express + Node.js REST API handling authentication, draft-plan CRUD flows, OpenDota integration, and background processing.
 3. **Database**: PostgreSQL 15 running in Docker, managed with Prisma ORM and Prisma migrations.
 
+The backend is now organized as a small modular Node service:
+
+- `app.ts` composes Express and mounts routers.
+- `routes/` owns HTTP endpoint definitions.
+- `services/` owns domain logic, OpenDota cache orchestration, ownership checks, and job processing.
+- `middleware/` owns JWT authentication.
+- `lib/` owns shared infrastructure such as the Prisma client.
+
 ## Planned Pages / Screens and Routing Structure
 
 1. **`/login`**
@@ -160,7 +168,9 @@ This is still lightweight authentication, not full RBAC or hardened production a
   - PostgreSQL-only background processing was chosen because it satisfied the bonus requirement while keeping infrastructure simple.
 - **Heavy form libraries**
   - The forms are relatively small, so plain controlled inputs were sufficient.
-- **Full backend modularization**
-  - The backend still centralizes several concerns in one entry file. For this project scope, that kept delivery faster, but the next refactor would split routes, services, and worker code.
+- **Schema-level request validation**
+  - The API has basic guards and enum expectations, but not yet a dedicated validation layer such as Zod-based request contracts.
+- **Operational observability**
+  - Background jobs and external API fetches are logged, but not yet instrumented with richer metrics, tracing, or alerting.
 - **Comprehensive automated test suite**
   - The project includes Playwright E2E coverage for the primary flow, but not a full unit/integration test matrix.
